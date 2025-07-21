@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://picknwear.vercel.app
+
+# Sitemaps
+Sitemap: https://picknwear.vercel.app/sitemap.xml

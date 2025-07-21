@@ -1,0 +1,36 @@
+{
+  "main": [
+    {
+      "name": "Home",
+      "url": "/"
+    },
+    {
+      "name": "Products",
+      "url": "/products"
+    }
+  ],
+  "footer": [
+    {
+      "name": "Products",
+      "url": "/products"
+    },
+    {
+      "name": "About",
+      "url": "#"
+    },
+    {
+      "name": "Contact",
+      "url": "#"
+    }
+  ],
+  "footerCopyright": [
+    {
+      "name": "Privacy & Policy",
+      "url": "#"
+    },
+    {
+      "name": "Terms of Service",
+      "url": "#"
+    }
+  ]
+}
