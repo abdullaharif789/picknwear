@@ -17,7 +17,7 @@
     "account": true,
     "sticky_header": true,
     "theme_switcher": true,
-    "default_theme": "system",
+    "default_theme": "light",
     "pagination_card": 9,
     "pagination_list": 4,
     "summary_length": 200,
