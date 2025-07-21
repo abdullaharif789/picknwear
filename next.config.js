@@ -4,7 +4,7 @@ const config = require("./src/config/config.json");
 
 const nextConfig = {
   reactStrictMode: true,
-  trailingSlash: config.site?.trailing_slash || false,
+  trailingSlash: true,
   transpilePackages: ["next-mdx-remote"],
   images: {
     remotePatterns: [
