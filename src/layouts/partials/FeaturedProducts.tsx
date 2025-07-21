@@ -37,9 +37,9 @@ const FeaturedProducts = ({
                 <ImageFallback
                   src={featured_image?.url || "/images/product_image404.jpg"}
                   width={312}
-                  height={269}
+                  height={468}
                   alt={featured_image?.altText || "fallback image"}
-                  className="w-[312px] h-[150px] md:h-[269px] object-cover border border-border rounded-md"
+                  className="w-[312px] h-[468px] object-cover border border-border rounded-md"
                 />
 
                 <BuyFromSource product={product} />
