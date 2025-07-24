@@ -49,7 +49,7 @@ const HeroSlider = ({ products }: { products: Product[] }) => {
 
               <div className="sm:col-12 lg:col-6">
                 {item.images.length > 0 && (
-                  <div className="relative w-full aspect-[2/3] overflow-hidden">
+                  <div className="relative w-full aspect-[1/1] overflow-hidden">
                     <ImageFallback
                       src={item.images[0].image_url}
                       alt="banner image"
