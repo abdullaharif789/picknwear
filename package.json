@@ -1,7 +1,7 @@
 {
-  "name": "commerceplate",
+  "name": "picknwear",
   "version": "2.2.5",
-  "description": "Shopify Storefront Boilerplate with Next.js, Tailwind CSS, and Shopify SDK",
+  "description": "PickNWear - Official Online Store",
   "author": "zeon.studio",
   "license": "MIT",
   "packageManager": "yarn@1.22.19",
