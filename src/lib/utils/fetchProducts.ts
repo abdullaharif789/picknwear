@@ -1,5 +1,5 @@
 export async function fetchAllProducts(filters?: Record<string, string | number | undefined>) {
-  let url = 'http://127.0.0.1:8000/api/public/products/';
+  let url = 'https://mc.15.206.47.74.nip.io/api/public/products/';
   if (filters && Object.keys(filters).length > 0) {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
@@ -13,7 +13,7 @@ export async function fetchAllProducts(filters?: Record<string, string | number 
 }
 
 export async function fetchProductByHandle(handle: string) {
-  const res = await fetch(`http://127.0.0.1:8000/api/public/products/${handle}/`, { cache: 'no-store' });
+  const res = await fetch(`https://mc.15.206.47.74.nip.io/api/public/products/${handle}/`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch product');
   const data = await res.json();
   return Array.isArray(data) ? data[0] : data;
