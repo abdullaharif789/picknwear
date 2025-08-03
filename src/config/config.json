@@ -1,7 +1,7 @@
 {
   "site": {
     "title": "PickNWear - Official Online Store",
-    "base_url": "https://picknwear.vercel.app/",
+    "base_url": "https://picknwear-production.up.railway.app/",
     "base_path": "/",
     "trailing_slash": false,
     "favicon": "/images/favicon.ico",
