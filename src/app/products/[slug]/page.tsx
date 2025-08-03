@@ -1,5 +1,4 @@
 import Social from "@/components/Social";
-import { AddToCart } from "@/components/cart/AddToCart";
 import LoadingProductGallery from "@/components/loadings/skeleton/SkeletonProductGallery";
 import ProductGallery from "@/components/product/ProductGallery";
 import ShowTags from "@/components/product/ShowTags";
@@ -7,21 +6,58 @@ import Tabs from "@/components/product/Tabs";
 import { VariantSelector } from "@/components/product/VariantSelector";
 import config from "@/config/config.json";
 import { getListPage } from "@/lib/contentParser";
-import { getProduct, getProductRecommendations } from "@/lib/shopify";
+import {
+  fetchProductByHandle,
+  fetchAllProducts,
+} from "@/lib/utils/fetchProducts";
 import LatestProducts from "@/partials/FeaturedProducts";
+import { BuyFromSource } from "@/components/cart/BuyFromSource";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { CustomProduct } from "@/types/custom";
+
+// Transform API data to match the expected format
+const transformProductData = (apiProduct: any): CustomProduct => {
+  return {
+    id: apiProduct.id,
+    name: apiProduct.name,
+    handle: apiProduct.handle,
+    featured_image: {
+      url:
+        apiProduct.featured_image?.url ||
+        apiProduct.images?.[0]?.image_url ||
+        "/images/product_image404.jpg",
+      altText: apiProduct.name,
+    },
+    price: apiProduct.price,
+    compare_at_price: apiProduct.compare_at_price,
+    source: apiProduct.source,
+    vendor: apiProduct.source?.store_name || "",
+    collections: {
+      nodes: [
+        {
+          title: apiProduct.source?.collection || "",
+          handle: apiProduct.source?.collection || "",
+        },
+      ],
+    },
+    tags: [],
+    variants: apiProduct.variants || [],
+    source_url: apiProduct.source_url || "",
+  };
+};
 
 export const generateMetadata = async (props: {
   params: Promise<{ slug: string }>;
 }) => {
   const params = await props.params;
-  const product = await getProduct(params.slug);
+  const product = await fetchProductByHandle(params.slug);
   if (!product) return notFound();
+
   return {
-    title: product.seo.title || product.title,
-    description: product.seo.description || product.description,
+    title: product.name,
+    description: product.body_html || product.name,
   };
 };
 
@@ -42,25 +78,25 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
     paymentsAndDelivery.frontmatter;
 
   const { currencySymbol } = config.shopify;
-  const product = await getProduct(params.slug);
+  const product = await fetchProductByHandle(params.slug);
 
   if (!product) return notFound();
-  const {
-    id,
-    title,
-    description,
-    descriptionHtml,
-    priceRange,
-    compareAtPriceRange,
-    images,
-    options,
-    variants,
-    tags,
-  } = product;
 
-  const relatedProducts = await getProductRecommendations(id);
+  const transformedProduct = transformProductData(product);
 
-  const defaultVariantId = variants.length > 0 ? variants[0].id : undefined;
+  // Get related products from the same source/store
+  const relatedProducts = await fetchAllProducts({
+    brand: product.source?.store_name,
+    perPage: "10",
+  });
+
+  const relatedProductsTransformed = (relatedProducts?.data || [])
+    .filter((p: any) => p.id !== product.id)
+    .slice(0, 4)
+    .map(transformProductData);
+
+  const defaultVariantId =
+    product.variants?.length > 0 ? product.variants[0].id : undefined;
 
   return (
     <>
@@ -70,52 +106,63 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
             {/* right side contents  */}
             <div className="col-10 md:col-8 lg:col-6">
               <Suspense>
-                <ProductGallery images={images} />
+                <ProductGallery images={product.images} />
               </Suspense>
             </div>
 
             {/* left side contents  */}
             <div className="col-10 md:col-8 lg:col-5 md:ml-7 py-6 lg:py-0">
-              <h1 className="text-3xl md:h2 mb-2 md:mb-6">{title}</h1>
+              <h1 className="text-3xl md:h2 mb-2 md:mb-6">{product.name}</h1>
 
               <div className="flex gap-2 items-center">
                 <h4 className="text-text-light dark:text-darkmode-text-light max-md:h2">
-                  {currencySymbol} {priceRange?.minVariantPrice.amount}{" "}
-                  {priceRange?.minVariantPrice?.currencyCode}
+                  {currencySymbol} {product.price}
                 </h4>
-                {parseFloat(compareAtPriceRange?.maxVariantPrice.amount) > 0 ? (
+                {parseFloat(product.compare_at_price) > 0 ? (
                   <s className="text-text-light max-md:h3 dark:text-darkmode-text-light">
-                    {currencySymbol}{" "}
-                    {compareAtPriceRange?.maxVariantPrice?.amount}{" "}
-                    {compareAtPriceRange?.maxVariantPrice?.currencyCode}
+                    {currencySymbol} {product.compare_at_price}
                   </s>
                 ) : (
                   ""
                 )}
               </div>
 
+              {/* Store Information */}
+              <div className="mt-4 mb-6">
+                <p className="text-sm text-text-light dark:text-darkmode-text-light">
+                  Sold by:{" "}
+                  <span className="font-medium">
+                    {product.source?.store_name}
+                  </span>
+                </p>
+              </div>
+
               <div className="my-10 md:my-10 space-y-6 md:space-y-10">
                 <div>
-                  {options && (
+                  {product.variants && product.variants.length > 0 && (
                     <VariantSelector
-                      options={options}
-                      variants={variants}
-                      images={images}
+                      options={[
+                        {
+                          id: "size",
+                          name: "Size",
+                          values: product.variants
+                            .map((v: any) => v.size)
+                            .filter(Boolean),
+                        },
+                      ]}
+                      variants={product.variants}
+                      images={product.images}
                     />
                   )}
                 </div>
               </div>
 
+              {/* Buy From Source Button */}
               <div className="flex gap-4 mt-8 md:mt-10 mb-6">
-                <Suspense>
-                  <AddToCart
-                    variants={product?.variants}
-                    availableForSale={product?.availableForSale}
-                    stylesClass={"btn max-md:btn-sm btn-primary"}
-                    handle={null}
-                    defaultVariantId={defaultVariantId}
-                  />
-                </Suspense>
+                <BuyFromSource
+                  product={transformedProduct as any}
+                  isProductPage={true}
+                />
               </div>
 
               <div className="mb-8 md:mb-10">
@@ -144,14 +191,14 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
 
               <div className="flex gap-3 items-center mb-6">
                 <h5 className="max-md:text-base">Share:</h5>
-                <Social socialName={title} className="social-icons" />
+                <Social socialName={product.name} className="social-icons" />
               </div>
 
-              {tags.length > 0 && (
+              {product.tags && product.tags.length > 0 && (
                 <div className="flex flex-wrap gap-3 items-center">
                   <h5 className="max-md:text-base">Tags:</h5>
                   <Suspense>
-                    <ShowTags tags={tags} />
+                    <ShowTags tags={product.tags} />
                   </Suspense>
                 </div>
               )}
@@ -161,12 +208,12 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
       </section>
 
       {/* Description of a product  */}
-      {description && (
+      {product.body_html && (
         <section>
           <div className="container">
             <div className="row">
               <div className="col-10 lg:col-11 mx-auto mt-12">
-                <Tabs descriptionHtml={descriptionHtml} />
+                <Tabs descriptionHtml={product.body_html} />
               </div>
             </div>
           </div>
@@ -176,12 +223,12 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
       {/* Recommended Products section  */}
       <section className="section">
         <div className="container">
-          {relatedProducts?.length > 0 && (
+          {relatedProductsTransformed?.length > 0 && (
             <>
               <div className="text-center mb-6 md:mb-14">
                 <h2 className="mb-2">Related Products</h2>
               </div>
-              <LatestProducts products={relatedProducts.slice(0, 4)} />
+              <LatestProducts products={relatedProductsTransformed} />
             </>
           )}
         </div>

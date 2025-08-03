@@ -2,22 +2,27 @@
 import { BuyFromSource } from "@/components/cart/BuyFromSource";
 import config from "@/config/config.json";
 import ImageFallback from "@/helpers/ImageFallback";
-import { Product } from "@/lib/shopify/types";
 import Link from "next/link";
+import { CustomProduct } from "@/types/custom";
+
+// Union type to handle both Product and CustomProduct
+type ProductType = CustomProduct | any;
 
 const FeaturedProducts = ({
   products,
   hideAllProductsButton,
+  initialCols = 3,
 }: {
-  products: Product[];
+  products: ProductType[];
   hideAllProductsButton?: boolean;
+  initialCols?: number;
 }) => {
   const { currencySymbol } = config.shopify;
 
   return (
     <>
       <div className="row">
-        {products.map((product: any) => {
+        {products.map((product: ProductType) => {
           const {
             id,
             name,
@@ -31,7 +36,7 @@ const FeaturedProducts = ({
           return (
             <div
               key={id}
-              className="text-center col-6 md:col-4 lg:col-3 mb-8 md:mb-14 group relative"
+              className={`text-center col-12 md:col-${initialCols} lg:col-${initialCols} mb-8 md:mb-14 group relative`}
             >
               <div className="relative overflow-hidden">
                 <ImageFallback
@@ -39,11 +44,12 @@ const FeaturedProducts = ({
                   width={312}
                   height={468}
                   alt={featured_image?.altText || "fallback image"}
-                  className="w-[312px] h-[468px] object-cover border border-border rounded-md"
+                  className="w-full sm:w-[312px] h-auto sm:h-[468px] object-cover border border-border rounded-md"
                 />
 
-                <BuyFromSource product={product} />
+                <BuyFromSource product={product as any} isProductPage={false} />
               </div>
+
               <div className="py-2 md:py-4 text-center z-20">
                 <h2 className="font-medium text-base md:text-xl line-clamp-1">
                   <Link
@@ -66,7 +72,7 @@ const FeaturedProducts = ({
                     ""
                   )}
                 </div>
-                <p className="text-sm">{source.store_name}</p>
+                <p className="text-sm">{source?.store_name}</p>
               </div>
             </div>
           );

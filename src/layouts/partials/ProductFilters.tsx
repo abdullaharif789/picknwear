@@ -2,12 +2,12 @@
 
 import ShowTags from "@/components/product/ShowTags";
 import RangeSlider from "@/components/rangeSlider/RangeSlider";
-import { ShopifyCollection } from "@/lib/shopify/types";
 import { createUrl } from "@/lib/utils";
 import { slugify } from "@/lib/utils/textConverter";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { BsCheckLg } from "react-icons/bs";
+import { CustomCollection, CustomVendor } from "@/types/custom";
 
 const ProductFilters = ({
   categories,
@@ -17,8 +17,8 @@ const ProductFilters = ({
   vendorsWithCounts,
   categoriesWithCounts,
 }: {
-  categories: ShopifyCollection[];
-  vendors: { vendor: string; productCount: number }[];
+  categories: CustomCollection[];
+  vendors: CustomVendor[];
   tags: string[];
   maxPriceData: { amount: string; currencyCode: string };
   vendorsWithCounts: { vendor: string; productCount: number }[];
@@ -74,10 +74,11 @@ const ProductFilters = ({
           {categories.map((category) => (
             <li
               key={category.handle}
-              className={`flex items-center justify-between cursor-pointer ${selectedCategory === category.handle
-                ? "text-text-dark dark:text-darkmode-text-dark font-semibold"
-                : "text-text-light dark:text-darkmode-text-light"
-                }`}
+              className={`flex items-center justify-between cursor-pointer ${
+                selectedCategory === category.handle
+                  ? "text-text-dark dark:text-darkmode-text-dark font-semibold"
+                  : "text-text-light dark:text-darkmode-text-light"
+              }`}
               onClick={() => handleCategoryClick(category.handle)}
             >
               {category.title}{" "}
@@ -86,10 +87,11 @@ const ProductFilters = ({
               ) : (
                 <span>
                   {categoriesWithCounts.length > 0
-                    ? `(${categoriesWithCounts.find(
-                      (c) => c.category === category.title,
-                    )?.productCount || 0
-                    })`
+                    ? `(${
+                        categoriesWithCounts.find(
+                          (c) => c.category === category.title,
+                        )?.productCount || 0
+                      })`
                     : `(${category?.products?.edges.length!})`}
                 </span>
               )}
@@ -110,21 +112,22 @@ const ProductFilters = ({
                 onClick={() => handleBrandClick(vendor.vendor)}
               >
                 {searchParams.has("b") &&
-                  !searchParams.has("c") &&
-                  !searchParams.has("minPrice") &&
-                  !searchParams.has("maxPrice") &&
-                  !searchParams.has("q") &&
-                  !searchParams.has("t") ? (
+                !searchParams.has("c") &&
+                !searchParams.has("minPrice") &&
+                !searchParams.has("maxPrice") &&
+                !searchParams.has("q") &&
+                !searchParams.has("t") ? (
                   <span>
                     {vendor.vendor} ({vendor.productCount})
                   </span>
                 ) : (
                   <span>
                     {vendorsWithCounts.length > 0
-                      ? `${vendor.vendor} (${vendorsWithCounts.find(
-                        (v) => v.vendor === vendor.vendor,
-                      )?.productCount || 0
-                      })`
+                      ? `${vendor.vendor} (${
+                          vendorsWithCounts.find(
+                            (v) => v.vendor === vendor.vendor,
+                          )?.productCount || 0
+                        })`
                       : `${vendor.vendor} (${vendor.productCount})`}
                   </span>
                 )}
