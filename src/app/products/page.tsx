@@ -59,11 +59,13 @@ const extractCategories = (products: CustomProduct[]): CustomCollection[] => {
     }
   });
 
-  return Array.from(categories.entries()).map(([title, count]) => ({
+  let _categories = Array.from(categories.entries()).map(([title, count]) => ({
     title,
     handle: title.toLowerCase().replace(/\s+/g, "-"),
     products: { edges: Array.from({ length: count as number }, () => ({})) },
   }));
+  _categories.sort((a, b) => a.title.localeCompare(b.title));
+  return _categories;
 };
 
 // Extract unique vendors from products

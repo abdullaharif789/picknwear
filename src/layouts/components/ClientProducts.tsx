@@ -131,6 +131,7 @@ const ClientProducts = ({
       setCurrentPage(nextPage);
       setHasMore(true);
     } catch (error) {
+      setHasMore(false);
       console.error("Error loading more products:", error);
     } finally {
       setLoadingMore(false);
