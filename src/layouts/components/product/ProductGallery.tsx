@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { JSX, MouseEvent, TouchEvent, useEffect, useRef, useState } from "react";
+import {
+  JSX,
+  MouseEvent,
+  TouchEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { FiZoomIn } from "react-icons/fi";
 import {
   HiOutlineArrowNarrowLeft,
@@ -36,24 +43,32 @@ interface CustomZoomImageProps {
   height: number;
 }
 
-const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX.Element => {
+const CustomZoomImage = ({
+  src,
+  alt,
+  width,
+  height,
+}: CustomZoomImageProps): JSX.Element => {
   const [isZoomed, setIsZoomed] = useState<boolean>(false);
   const [position, setPosition] = useState<Position>({ x: 0.5, y: 0.5 });
   const [showMagnifier, setShowMagnifier] = useState<boolean>(false);
   const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false);
-  const [touchStartPosition, setTouchStartPosition] = useState<Position | null>(null);
+  const [touchStartPosition, setTouchStartPosition] = useState<Position | null>(
+    null,
+  );
   const [touchMoveCount, setTouchMoveCount] = useState<number>(0);
   const imageRef = useRef<HTMLDivElement | null>(null);
 
   // Detect touch device on component mount
   useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
   }, []);
 
   const updatePosition = (clientX: number, clientY: number): void => {
     if (!imageRef.current) return;
 
-    const { left, top, width, height } = imageRef.current.getBoundingClientRect();
+    const { left, top, width, height } =
+      imageRef.current.getBoundingClientRect();
 
     // Calculate position in percentage (0 to 1)
     const x = Math.max(0, Math.min(1, (clientX - left) / width));
@@ -76,7 +91,7 @@ const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX
       // Store touch start position to determine if it was a tap or pan
       setTouchStartPosition({
         x: touch.clientX,
-        y: touch.clientY
+        y: touch.clientY,
       });
 
       setTouchMoveCount(0);
@@ -92,7 +107,7 @@ const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       updatePosition(touch.clientX, touch.clientY);
-      setTouchMoveCount(prev => prev + 1);
+      setTouchMoveCount((prev) => prev + 1);
     }
   };
 
@@ -117,8 +132,13 @@ const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX
 
   return (
     <div
-      className={`relative w-full h-full overflow-hidden rounded-md ${!isZoomed && showMagnifier ? 'cursor-zoom-in' : isZoomed ? 'cursor-zoom-out' : ''
-        }`}
+      className={`relative w-full h-full overflow-hidden rounded-md ${
+        !isZoomed && showMagnifier
+          ? "cursor-zoom-in"
+          : isZoomed
+            ? "cursor-zoom-out"
+            : ""
+      }`}
       ref={imageRef}
       onMouseEnter={() => !isTouchDevice && setShowMagnifier(true)}
       onMouseLeave={() => !isTouchDevice && setShowMagnifier(false)}
@@ -144,10 +164,10 @@ const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX
           style={{
             left: `${position.x * 100}%`,
             top: `${position.y * 100}%`,
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            width: isTouchDevice ? '40px' : '24px',
-            height: isTouchDevice ? '40px' : '24px'
+            transform: "translate(-50%, -50%)",
+            pointerEvents: "none",
+            width: isTouchDevice ? "40px" : "24px",
+            height: isTouchDevice ? "40px" : "24px",
           }}
         >
           <FiZoomIn size={isTouchDevice ? 24 : 16} />
@@ -160,7 +180,7 @@ const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX
           className="absolute top-0 left-0 right-0 bottom-0 cursor-zoom-out"
           style={{
             backgroundImage: `url(${src})`,
-            backgroundSize: '200% 200%',
+            backgroundSize: "200% 200%",
             backgroundPosition: `${position.x * 100}% ${position.y * 100}%`,
             zIndex: 10,
           }}
@@ -177,11 +197,64 @@ const CustomZoomImage = ({ src, alt, width, height }: CustomZoomImageProps): JSX
   );
 };
 
+// Get images for a specific color
+const getImagesForColor = (
+  allImages: any[],
+  color: string,
+  variants: any[],
+) => {
+  // If no color is selected or no variants exist, show all images
+  if (!color || !variants || variants.length === 0) {
+    return allImages;
+  }
+
+  // Find variants with this color
+  const colorVariants = variants.filter((v) => v.color === color);
+
+  // If no variants found for this color, show all images
+  if (colorVariants.length === 0) {
+    return allImages;
+  }
+
+  // Get featured images from these variants
+  const variantImages = colorVariants
+    .map((v) => v.featured_image)
+    .filter(Boolean);
+
+  // Filter main images that match the variant images
+  const filteredImages = allImages.filter((image) =>
+    variantImages.some((variantImage) => image.image_url === variantImage),
+  );
+
+  // If no filtered images found, try to find images that contain the color name in the URL
+  if (filteredImages.length === 0) {
+    const colorLower = color.toLowerCase();
+    const colorFilteredImages = allImages.filter(
+      (image) =>
+        image.image_url.toLowerCase().includes(colorLower) ||
+        image.image_url.toLowerCase().includes(colorLower.replace(/\s+/g, "")),
+    );
+
+    if (colorFilteredImages.length > 0) {
+      return colorFilteredImages;
+    }
+  }
+
+  // If still no filtered images found, return all images
+  return filteredImages.length > 0 ? filteredImages : allImages;
+};
+
 interface ProductGalleryProps {
   images: ImageItem[];
+  variants?: any[];
+  allImages?: any[];
 }
 
-const ProductGallery = ({ images }: ProductGalleryProps): JSX.Element => {
+const ProductGallery = ({
+  images,
+  variants,
+  allImages,
+}: ProductGalleryProps): JSX.Element => {
   const [thumbsSwiper, setThumbsSwiper] = useState<TSwiper | null>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [isHovered, setIsHovered] = useState<boolean>(false);
@@ -191,35 +264,45 @@ const ProductGallery = ({ images }: ProductGalleryProps): JSX.Element => {
 
   // Detect touch device on component mount
   useEffect(() => {
-    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    setIsTouchDevice("ontouchstart" in window || navigator.maxTouchPoints > 0);
   }, []);
 
-  const searchParams = useSearchParams().get("color");
+  const searchParams = useSearchParams();
+  const selectedColor = searchParams.get("color");
 
   const prevRef = useRef<HTMLDivElement | null>(null);
   const nextRef = useRef<HTMLDivElement | null>(null);
 
-  const altTextArray: string[] = images.map((item: ImageItem) => item.altText);
+  // Filter images based on selected color
+  const filteredImages =
+    selectedColor && variants && allImages && variants.length > 0
+      ? getImagesForColor(allImages, selectedColor, variants)
+      : images;
 
-  const filteredImages: ImageItem[] = images.filter(
-    (item: ImageItem) => item.altText === altTextArray[activeIndex],
-  );
+  // Transform filtered images to ImageItem format
+  const displayImages: ImageItem[] = filteredImages.map((image, index) => ({
+    url: image.image_url || image.url,
+    altText: selectedColor
+      ? `${selectedColor} - Image ${index + 1}`
+      : `Product Image ${index + 1}`,
+    width: 722,
+    height: 623,
+  }));
 
   useEffect(() => {
-    if (searchParams) {
-      const foundIndex: number = altTextArray.indexOf(searchParams);
-      setActiveIndex(foundIndex !== -1 ? foundIndex : 0);
+    if (selectedColor) {
+      setActiveIndex(0);
     }
     setLoadingThumb(false);
-  }, [searchParams, altTextArray]);
+  }, [selectedColor]);
 
   const handleSlideChange = (swiper: TSwiper): void => {
     setActiveIndex(swiper.activeIndex);
-    setPicUrl(filteredImages[swiper.activeIndex]?.url || "");
+    setPicUrl(displayImages[swiper.activeIndex]?.url || "");
   };
 
   const handleThumbSlideClick = (clickedUrl: string): void => {
-    const foundIndex: number = filteredImages.findIndex(
+    const foundIndex: number = displayImages.findIndex(
       (item: ImageItem) => item.url === clickedUrl,
     );
     if (foundIndex !== -1) {
@@ -249,7 +332,7 @@ const ProductGallery = ({ images }: ProductGalleryProps): JSX.Element => {
           onSlideChange={handleSlideChange}
           allowTouchMove={!isHovered} // Disable Swiper touch when zooming is active
         >
-          {filteredImages.map((item: ImageItem) => (
+          {displayImages.map((item: ImageItem) => (
             <SwiperSlide key={item.url}>
               <div className="mb-6 border border-border dark:border-border/40 rounded-md max-h-[623px] overflow-hidden">
                 <CustomZoomImage
@@ -262,10 +345,11 @@ const ProductGallery = ({ images }: ProductGalleryProps): JSX.Element => {
             </SwiperSlide>
           ))}
           <div
-            className={`hidden lg:block w-full absolute top-1/2 -translate-y-1/2 z-10 px-6 text-text-dark ${isHovered
-              ? "opacity-100 transition-opacity duration-300 ease-in-out"
-              : "opacity-0 transition-opacity duration-300 ease-in-out"
-              }`}
+            className={`hidden lg:block w-full absolute top-1/2 -translate-y-1/2 z-10 px-6 text-text-dark ${
+              isHovered
+                ? "opacity-100 transition-opacity duration-300 ease-in-out"
+                : "opacity-0 transition-opacity duration-300 ease-in-out"
+            }`}
           >
             <div
               ref={prevRef}
@@ -290,14 +374,15 @@ const ProductGallery = ({ images }: ProductGalleryProps): JSX.Element => {
         watchSlidesProgress={true}
         modules={[FreeMode, Navigation, Thumbs]}
       >
-        {filteredImages.map((item: ImageItem) => (
+        {displayImages.map((item: ImageItem) => (
           <SwiperSlide key={item.url}>
             <div
               onClick={() => handleThumbSlideClick(item.url)}
-              className={`rounded-md cursor-pointer overflow-hidden ${picUrl === item.url
-                ? "border border-darkmode-border dark:border-yellow-500"
-                : "border border-border dark:border-border/40"
-                }`}
+              className={`rounded-md cursor-pointer overflow-hidden ${
+                picUrl === item.url
+                  ? "border border-darkmode-border dark:border-yellow-500"
+                  : "border border-border dark:border-border/40"
+              }`}
             >
               <Image
                 src={item.url}

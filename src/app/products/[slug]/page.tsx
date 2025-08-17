@@ -1,9 +1,12 @@
 import Social from "@/components/Social";
 import LoadingProductGallery from "@/components/loadings/skeleton/SkeletonProductGallery";
-import ProductGallery from "@/components/product/ProductGallery";
-import ShowTags from "@/components/product/ShowTags";
-import Tabs from "@/components/product/Tabs";
-import { VariantSelector } from "@/components/product/VariantSelector";
+import ProductGallery from "@/layouts/components/product/ProductGallery";
+import ShowTags from "@/layouts/components/product/ShowTags";
+import Tabs from "@/layouts/components/product/Tabs";
+import {
+  VariantSelector,
+  useSelectedVariant,
+} from "@/layouts/components/product/VariantSelector";
 import config from "@/config/config.json";
 import { getListPage } from "@/lib/contentParser";
 import {
@@ -11,11 +14,12 @@ import {
   fetchAllProducts,
 } from "@/lib/utils/fetchProducts";
 import LatestProducts from "@/partials/FeaturedProducts";
-import { BuyFromSource } from "@/components/cart/BuyFromSource";
+import { BuyFromSource } from "@/layouts/components/cart/BuyFromSource";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CustomProduct } from "@/types/custom";
+import ProductVariantHandler from "./ProductVariantHandler";
 
 // Transform API data to match the expected format
 const transformProductData = (apiProduct: any): CustomProduct => {
@@ -46,6 +50,81 @@ const transformProductData = (apiProduct: any): CustomProduct => {
     variants: apiProduct.variants || [],
     source_url: apiProduct.source_url || "",
   };
+};
+
+// Transform API images to the expected format
+const transformImages = (apiImages: any[]) => {
+  if (!apiImages || !Array.isArray(apiImages)) return [];
+
+  return apiImages.map((image, index) => ({
+    url: image.image_url,
+    altText: `Product Image ${index + 1}`,
+    width: 722,
+    height: 623,
+  }));
+};
+
+// Transform API variants to the expected format
+const transformVariants = (apiVariants: any[]) => {
+  if (!apiVariants || !Array.isArray(apiVariants)) return [];
+
+  return apiVariants.map((variant) => ({
+    id: variant.id.toString(),
+    variant_id: variant.variant_id,
+    title: variant.title,
+    price: variant.price,
+    compare_at_price: variant.compare_at_price,
+    sku: variant.sku,
+    availableForSale: variant.available,
+    selectedOptions: [
+      {
+        name: "Color",
+        value: variant.color,
+      },
+      {
+        name: "Size",
+        value: variant.size,
+      },
+    ],
+    size: variant.size,
+    color: variant.color,
+    featured_image: variant.featured_image,
+  }));
+};
+
+// Get unique colors from variants
+const getUniqueColors = (variants: any[]) => {
+  if (!variants || !Array.isArray(variants)) return [];
+  const colors = variants.map((v) => v.color).filter(Boolean);
+  return [...new Set(colors)];
+};
+
+// Get unique sizes from variants
+const getUniqueSizes = (variants: any[]) => {
+  if (!variants || !Array.isArray(variants)) return [];
+  const sizes = variants.map((v) => v.size).filter(Boolean);
+  return [...new Set(sizes)];
+};
+
+// Get images for a specific color
+const getImagesForColor = (images: any[], color: string, variants: any[]) => {
+  if (!color || !images || !variants) return images;
+
+  // Find variants with this color
+  const colorVariants = variants.filter((v) => v.color === color);
+
+  // Get featured images from these variants
+  const variantImages = colorVariants
+    .map((v) => v.featured_image)
+    .filter(Boolean);
+
+  // Filter main images that match the variant images
+  const filteredImages = images.filter((image) =>
+    variantImages.some((variantImage) => image.image_url === variantImage),
+  );
+
+  // If no filtered images found, return all images
+  return filteredImages.length > 0 ? filteredImages : images;
 };
 
 export const generateMetadata = async (props: {
@@ -83,6 +162,12 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
   if (!product) return notFound();
 
   const transformedProduct = transformProductData(product);
+  const transformedImages = transformImages(product.images);
+  const transformedVariants = transformVariants(product.variants);
+
+  // Get unique colors and sizes
+  const uniqueColors = getUniqueColors(product.variants);
+  const uniqueSizes = getUniqueSizes(product.variants);
 
   // Get related products from the same source/store
   const relatedProducts = await fetchAllProducts({
@@ -95,117 +180,20 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
     .slice(0, 4)
     .map(transformProductData);
 
-  const defaultVariantId =
-    product.variants?.length > 0 ? product.variants[0].id : undefined;
-
   return (
     <>
-      <section className="md:section-sm">
-        <div className="container">
-          <div className="row justify-center">
-            {/* right side contents  */}
-            <div className="col-10 md:col-8 lg:col-6">
-              <Suspense>
-                <ProductGallery images={product.images} />
-              </Suspense>
-            </div>
-
-            {/* left side contents  */}
-            <div className="col-10 md:col-8 lg:col-5 md:ml-7 py-6 lg:py-0">
-              <h1 className="text-3xl md:h2 mb-2 md:mb-6">{product.name}</h1>
-
-              <div className="flex gap-2 items-center">
-                <h4 className="text-text-light dark:text-darkmode-text-light max-md:h2">
-                  {currencySymbol} {product.price}
-                </h4>
-                {parseFloat(product.compare_at_price) > 0 ? (
-                  <s className="text-text-light max-md:h3 dark:text-darkmode-text-light">
-                    {currencySymbol} {product.compare_at_price}
-                  </s>
-                ) : (
-                  ""
-                )}
-              </div>
-
-              {/* Store Information */}
-              <div className="mt-4 mb-6">
-                <p className="text-sm text-text-light dark:text-darkmode-text-light">
-                  Sold by:{" "}
-                  <span className="font-medium">
-                    {product.source?.store_name}
-                  </span>
-                </p>
-              </div>
-
-              <div className="my-10 md:my-10 space-y-6 md:space-y-10">
-                <div>
-                  {product.variants && product.variants.length > 0 && (
-                    <VariantSelector
-                      options={[
-                        {
-                          id: "size",
-                          name: "Size",
-                          values: product.variants
-                            .map((v: any) => v.size)
-                            .filter(Boolean),
-                        },
-                      ]}
-                      variants={product.variants}
-                      images={product.images}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {/* Buy From Source Button */}
-              <div className="flex gap-4 mt-8 md:mt-10 mb-6">
-                <BuyFromSource
-                  product={transformedProduct as any}
-                  isProductPage={true}
-                />
-              </div>
-
-              <div className="mb-8 md:mb-10">
-                <p className="p-2 max-md:text-sm rounded-md bg-light dark:bg-darkmode-light inline">
-                  {estimated_delivery}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <h5 className="max-md:text-base">Payment: </h5>
-                {payment_methods?.map(
-                  (payment: { name: string; image_url: string }) => (
-                    <Image
-                      key={payment.name}
-                      src={payment.image_url}
-                      alt={payment.name}
-                      width={44}
-                      height={32}
-                      className="w-[44px] h-[32px]"
-                    />
-                  ),
-                )}
-              </div>
-
-              <hr className="my-6 border border-border dark:border-border/40" />
-
-              <div className="flex gap-3 items-center mb-6">
-                <h5 className="max-md:text-base">Share:</h5>
-                <Social socialName={product.name} className="social-icons" />
-              </div>
-
-              {product.tags && product.tags.length > 0 && (
-                <div className="flex flex-wrap gap-3 items-center">
-                  <h5 className="max-md:text-base">Tags:</h5>
-                  <Suspense>
-                    <ShowTags tags={product.tags} />
-                  </Suspense>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+      <ProductVariantHandler
+        transformedProduct={transformedProduct}
+        transformedVariants={transformedVariants}
+        transformedImages={transformedImages}
+        uniqueColors={uniqueColors}
+        uniqueSizes={uniqueSizes}
+        productImages={product.images}
+        estimated_delivery={estimated_delivery}
+        payment_methods={payment_methods}
+        currencySymbol={currencySymbol}
+        product={product}
+      />
 
       {/* Description of a product  */}
       {product.body_html && (
