@@ -20,6 +20,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { CustomProduct } from "@/types/custom";
 import ProductVariantHandler from "./ProductVariantHandler";
+import ReviewsSection from "@/layouts/components/product/ReviewsSection";
 
 // Transform API data to match the expected format
 const transformProductData = (apiProduct: any): CustomProduct => {
@@ -207,6 +208,9 @@ const ShowProductSingle = async ({ params }: { params: { slug: string } }) => {
           </div>
         </section>
       )}
+
+      {/* Reviews Section */}
+      <ReviewsSection productHandle={params.slug} />
 
       {/* Recommended Products section  */}
       <section className="section">
