@@ -87,6 +87,84 @@ const extractVendors = (products: CustomProduct[]): CustomVendor[] => {
   return _vendors;
 };
 
+// Extract unique sizes from product variants
+const extractSizes = (
+  products: CustomProduct[],
+): { size: string; productCount: number }[] => {
+  const sizes = new Map();
+
+  products.forEach((product) => {
+    if (product.variants && Array.isArray(product.variants)) {
+      product.variants.forEach((variant) => {
+        if (variant.size) {
+          // Only include alphabetic sizes (no numbers or special characters)
+          const cleanSize = variant.size.trim();
+          if (/^[A-Za-z]+$/.test(cleanSize)) {
+            const normalizedSize = cleanSize.toUpperCase();
+            const count = sizes.get(normalizedSize) || 0;
+            sizes.set(normalizedSize, count + 1);
+          }
+        }
+      });
+    }
+  });
+
+  let _sizes = Array.from(sizes.entries()).map(([size, count]) => ({
+    size,
+    productCount: count as number,
+  }));
+
+  // Sort sizes in logical order (XS, S, M, L, XL, XXL, etc.)
+  const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+  _sizes.sort((a, b) => {
+    const aIndex = sizeOrder.indexOf(a.size.toUpperCase());
+    const bIndex = sizeOrder.indexOf(b.size.toUpperCase());
+
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex;
+    } else if (aIndex !== -1) {
+      return -1;
+    } else if (bIndex !== -1) {
+      return 1;
+    } else {
+      return a.size.localeCompare(b.size);
+    }
+  });
+
+  return _sizes;
+};
+
+// Extract unique colors from product variants
+const extractColors = (
+  products: CustomProduct[],
+): { color: string; productCount: number }[] => {
+  const colors = new Map();
+
+  products.forEach((product) => {
+    if (product.variants && Array.isArray(product.variants)) {
+      product.variants.forEach((variant) => {
+        if (variant.color) {
+          // Normalize color name: remove hyphens, lowercase, capitalize first letter
+          const normalizedColor = variant.color
+            .replace(/-/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (char: string) => char.toUpperCase());
+
+          const count = colors.get(normalizedColor) || 0;
+          colors.set(normalizedColor, count + 1);
+        }
+      });
+    }
+  });
+
+  let _colors = Array.from(colors.entries()).map(([color, count]) => ({
+    color,
+    productCount: count as number,
+  }));
+  _colors.sort((a, b) => a.color.localeCompare(b.color));
+  return _colors;
+};
+
 // Filter products based on search params
 const filterProducts = (
   products: CustomProduct[],
@@ -138,6 +216,45 @@ const filterProducts = (
       (product) =>
         product.source?.collection?.toLowerCase().replace(/\s+/g, "-") ===
         searchParams.c,
+    );
+  }
+
+  // Filter by size
+  if (searchParams.size) {
+    const sizes = Array.isArray(searchParams.size)
+      ? searchParams.size
+      : [searchParams.size];
+    filteredProducts = filteredProducts.filter((product) =>
+      product.variants?.some((variant) =>
+        sizes.some((size) => {
+          const cleanSize = variant.size?.trim();
+          if (!cleanSize || !/^[A-Za-z]+$/.test(cleanSize)) return false;
+          return cleanSize.toUpperCase() === size.toUpperCase();
+        }),
+      ),
+    );
+  }
+
+  // Filter by color
+  if (searchParams.color) {
+    const colors = Array.isArray(searchParams.color)
+      ? searchParams.color
+      : [searchParams.color];
+    filteredProducts = filteredProducts.filter((product) =>
+      product.variants?.some((variant) =>
+        colors.some((color) => {
+          if (!variant.color) return false;
+          const normalizedVariantColor = variant.color
+            .replace(/-/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (char: string) => char.toUpperCase());
+          const normalizedSearchColor = color
+            .replace(/-/g, " ")
+            .toLowerCase()
+            .replace(/\b\w/g, (char: string) => char.toUpperCase());
+          return normalizedVariantColor === normalizedSearchColor;
+        }),
+      ),
     );
   }
 
@@ -217,6 +334,8 @@ const Home = async ({
   // Extract filter data
   const categories = extractCategories(transformedProducts);
   const vendors = extractVendors(transformedProducts);
+  const sizes = extractSizes(transformedProducts);
+  const colors = extractColors(transformedProducts);
 
   // Calculate max price for range slider
   const maxPrice = Math.max(
@@ -241,6 +360,31 @@ const Home = async ({
     category: category.title,
     productCount: filteredProducts.filter(
       (p) => p.source?.collection === category.title,
+    ).length,
+  }));
+
+  const sizesWithCounts = sizes.map((size) => ({
+    size: size.size,
+    productCount: filteredProducts.filter((p) =>
+      p.variants?.some((v) => {
+        const cleanSize = v.size?.trim();
+        if (!cleanSize || !/^[A-Za-z]+$/.test(cleanSize)) return false;
+        return cleanSize.toUpperCase() === size.size;
+      }),
+    ).length,
+  }));
+
+  const colorsWithCounts = colors.map((color) => ({
+    color: color.color,
+    productCount: filteredProducts.filter((p) =>
+      p.variants?.some((v) => {
+        if (!v.color) return false;
+        const normalizedVariantColor = v.color
+          .replace(/-/g, " ")
+          .toLowerCase()
+          .replace(/\b\w/g, (char: string) => char.toUpperCase());
+        return normalizedVariantColor === color.color;
+      }),
     ).length,
   }));
 
@@ -274,6 +418,8 @@ const Home = async ({
               maxPriceData={maxPriceData}
               vendorsWithCounts={vendorsWithCounts}
               categoriesWithCounts={categoriesWithCounts}
+              sizes={sizesWithCounts}
+              colors={colorsWithCounts}
             />
           </MobileFilterToggle>
 
@@ -290,6 +436,8 @@ const Home = async ({
                     maxPriceData={maxPriceData}
                     vendorsWithCounts={vendorsWithCounts}
                     categoriesWithCounts={categoriesWithCounts}
+                    sizes={sizesWithCounts}
+                    colors={colorsWithCounts}
                   />
                 </Suspense>
               </div>

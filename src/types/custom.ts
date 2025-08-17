@@ -51,6 +51,8 @@ export interface SearchParams {
   b?: string;
   c?: string;
   t?: string;
+  size?: string | string[];
+  color?: string | string[];
   page?: string;
   perPage?: string;
 }
