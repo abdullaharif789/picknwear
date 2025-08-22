@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { handle: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
-    const { handle } = await params;
+    const handle = request.nextUrl.pathname.split("/").slice(-3)[0];
 
     const productResponse = await fetch(`${process.env.API_BASE_URL}/products/${handle}/`);
     if (!productResponse.ok) {
@@ -29,12 +26,9 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { handle: string } }
-) {
+export async function POST(request: NextRequest) {
   try {
-    const { handle } = await params;
+    const handle = request.nextUrl.pathname.split("/").slice(-3)[0];
     const body = await request.json();
 
     const productResponse = await fetch(`${process.env.API_BASE_URL}/products/${handle}/`);
