@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const API_BASE_URL = "https://mc.15.206.47.74.nip.io/api/public"
 
 export async function GET(request: NextRequest) {
   try {
     const handle = request.nextUrl.pathname.split("/").slice(-3)[0];
 
-    const productResponse = await fetch(`${process.env.API_BASE_URL}/products/${handle}/`);
+    const productResponse = await fetch(`${API_BASE_URL}/products/${handle}/`);
     if (!productResponse.ok) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     const product = await productResponse.json();
 
-    const reviewsResponse = await fetch(`${process.env.API_BASE_URL}/products/${product.id}/reviews/`);
+    const reviewsResponse = await fetch(`${API_BASE_URL}/products/${product.id}/reviews/`);
     if (!reviewsResponse.ok) {
       return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 });
     }
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     const handle = request.nextUrl.pathname.split("/").slice(-3)[0];
     const body = await request.json();
 
-    const productResponse = await fetch(`${process.env.API_BASE_URL}/products/${handle}/`);
+    const productResponse = await fetch(`${API_BASE_URL}/products/${handle}/`);
     if (!productResponse.ok) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       verified_purchase: false
     };
 
-    const reviewResponse = await fetch(`${process.env.API_BASE_URL}/products/${product.id}/reviews/add/`, {
+    const reviewResponse = await fetch(`${API_BASE_URL}/products/${product.id}/reviews/add/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

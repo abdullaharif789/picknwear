@@ -1,9 +1,145 @@
-# *
-User-agent: *
-Allow: /
+# =========================================
+# robots.txt for picknwear-public-production.up.railway.app
+# Purpose: minimize scraping, reduce crawl load, and avoid indexing sensitive/duplicate URLs
+# NOTE: robots.txt is public and advisory only. Enforce server-side controls for real security.
+# =========================================
 
-# Host
-Host: https://picknwear-production.up.railway.app
+# Host (non-standard; respected mainly by Yandex)
+Host: https://picknwear-public-production.up.railway.app
 
 # Sitemaps
-Sitemap: https://picknwear-production.up.railway.app/sitemap.xml
+Sitemap: https://picknwear-public-production.up.railway.app/sitemap.xml
+
+# -----------------------------------------
+# 1) Global defaults
+# -----------------------------------------
+User-agent: *
+# Allow static assets (helps core web vitals)
+Allow: /assets/
+Allow: /static/
+Allow: /images/
+Allow: /css/
+Allow: /js/
+
+# Disallow sensitive areas (never rely on robots for auth!)
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /account/
+Disallow: /user/
+Disallow: /orders/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /settings/
+Disallow: /dashboard/
+Disallow: /internal/
+Disallow: /debug/
+Disallow: /docs/private/
+Disallow: /server-status
+
+# Limit search/faceted crawl (preserve key paginator if you use it)
+Disallow: /search
+Disallow: /*?*                           # block most query-params
+Allow: /*?page=                           # but allow classic pagination if needed
+# If you use UTM or tracking params, block them explicitly:
+Disallow: /*?*utm_*
+Disallow: /*?*ref=*
+Disallow: /*?*session=*
+
+# Optional: pace unknown bots a bit (supported by some engines)
+Crawl-delay: 10
+
+# -----------------------------------------
+# 2) Friendly search engines (be explicit)
+# -----------------------------------------
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Yandex
+Allow: /
+Crawl-delay: 5
+
+User-agent: Applebot
+Allow: /
+Crawl-delay: 2
+
+# -----------------------------------------
+# 3) Block common AI/data-scrapers & high-risk crawlers
+#    (This list changes—review quarterly.)
+# -----------------------------------------
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Facebot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: SentiBot
+Disallow: /
+
+User-agent: Scrapy
+Disallow: /
+
+User-agent: python-requests
+Disallow: /
+
+User-agent: curl
+Disallow: /
+
+User-agent: Wget
+Disallow: /
+
+# -----------------------------------------
+# 4) Catch-alls for aggressive/unknown agents
+# -----------------------------------------
+User-agent: *bot
+Disallow: /
+
+User-agent: *crawler
+Disallow: /
+
+User-agent: *spider
+Disallow: /
+
+# End of file

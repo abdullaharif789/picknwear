@@ -4,10 +4,7 @@ import { SortFilterItem as SortFilterItemType } from "@/lib/constants";
 import { createUrl } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import {
-  ListItem,
-  PathFilterItem as PathFilterItemType,
-} from "../product/ProductLayouts";
+import { ListItem, PathFilterItem as PathFilterItemType } from "@/types/layout";
 
 function PathFilterItem({ item }: { item: PathFilterItemType }) {
   const pathname = usePathname();
@@ -22,8 +19,9 @@ function PathFilterItem({ item }: { item: PathFilterItemType }) {
     <li className="mt-2 flex text-black dark:text-white" key={item.title}>
       <DynamicTag
         href={createUrl(item.path, newParams)}
-        className={`w-full text-sm ${active ? "bg-green-400" : "hover:underline"
-          }`}
+        className={`w-full text-sm ${
+          active ? "bg-green-400" : "hover:underline"
+        }`}
       >
         {item.title}
       </DynamicTag>
